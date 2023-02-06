@@ -1,0 +1,23 @@
+[
+	{
+		"id": "0",
+		"intervalType": 1,
+		"intervalTicks": 7,
+		"description": "Charge recurring payments",
+		"isActive": true
+	},
+	{
+		"id": "1",
+		"intervalType": 1,
+		"intervalTicks": 6,
+		"description": "Update pending payments status",
+		"isActive": true
+	},
+	{
+		"id": "2",
+		"intervalType": 1,
+		"intervalTicks": 10,
+		"description": "Set dollar exchange rate",
+		"isActive": true
+	}
+]

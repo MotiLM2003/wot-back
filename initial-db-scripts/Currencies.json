@@ -1,0 +1,23 @@
+[
+	{
+		"isActive": true,
+		"abbr": "USD",
+		"symbol": "$",
+		"description": "American dollar"
+	},
+	{ "isActive": true, "abbr": "EUR", "symbol": "€", "description": "Euro " },
+	{
+		"isActive": true,
+		"abbr": "CAD",
+		"symbol": "C$",
+		"description": "Canadian dollar"
+	},
+
+	{
+		"isActive": true,
+		"abbr": "AUD",
+		"symbol": "A$",
+		"description": "Australian dollar"
+	},
+	{ "isActive": true, "abbr": "lb", "symbol": "£", "description": "Pound " }
+]
