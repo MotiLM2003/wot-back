@@ -5,7 +5,7 @@ SibApiV3Sdk.ApiClient.instance.authentications['api-key'].apiKey =
 const { getTemplate } = require('./templates/templates');
 
 sendEmail = ({ template, options, to }) => {
-	console.log('in sending email');
+	console.log('in sending email', template);
 	const { subject, html } = getTemplate(template, options);
 
 	new SibApiV3Sdk.TransactionalEmailsApi()

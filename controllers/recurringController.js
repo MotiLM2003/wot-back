@@ -1,4 +1,6 @@
 const moment = require('moment');
+var mongoose = require('mongoose');
+const { connectToDatabase } = require('../lib/mongodb/mongodb');
 const {
 	addNewRecurring,
 	getAll,
@@ -11,14 +13,6 @@ const { sendEmail } = require('../emails/email');
 const { addNewPayments } = require('../actions/paymentsDBActions');
 const { getNewPayment } = require('../utils/payments');
 const { apiSelector } = require('../apis/apiSelector');
-const Rrecurrings = require('../models/Rrecurrings');
-// const getAll = async (filters = {}) => {
-//   console.log(' here');
-//   console.log(filters);
-//   const users = await User.find(filters);
-//   console.log(users);
-//   return users;
-// };
 
 const getRecurringById = async (req, res) => {
 	const recurring = await DBGetRecurringById(req.body);
@@ -28,6 +22,32 @@ const getRecurringById = async (req, res) => {
 const getRecurringTaskList = async (req, res) => {
 	const recurring = await DBGetRecurringTaskList(req.body);
 	res.send(recurring.filter((x) => x.paymentInterface !== null));
+};
+
+// getting campaign details
+const getCampaignDetails = async (db, id) => {
+	const campaign = await db
+		.collection('campaigns')
+		.findOne({ _id: id }, { projection: { shortDescription: 1, owner: 1 } });
+	return campaign;
+};
+
+const getCurrency = async (db, id) => {
+	const c = await db
+		.collection('currencies')
+		.findOne({ _id: id }, { projection: { symbol: 1 } });
+
+	return c;
+};
+
+const getCampaignOwner = async (db, id) => {
+	const user = await db
+		.collection('users')
+		.findOne(
+			{ _id: id },
+			{ projection: { firstName: 1, lastName: 1, email: 1 } }
+		);
+	return user;
 };
 
 const addRecurring = async (req, res) => {
@@ -43,12 +63,32 @@ const addRecurring = async (req, res) => {
 		console.log('newRecurring', newRecurring);
 		console.log('Calling API  Selector'.green);
 		const results = await apiSelector(newRecurring._id);
-		console.log('returnning', results);
 
-		if (results.isApproved || 1 == 1) {
+		if (results?.isApproved || 1 === 1) {
 			newRecurring.reference_id = results.data.reference_number;
 		} else {
 			console.log('failed');
+			const { db } = await connectToDatabase();
+			const campaign = await getCampaignDetails(
+				db,
+				mongoose.Types.ObjectId(recurring.campaign)
+			);
+
+			sendEmail({
+				title: 'Your Donation was Declined',
+				template: 'donorDonationDeclined',
+				options: {
+					name: recurring.displayName,
+					campignName: campaign.shortDescription,
+				},
+				to: [
+					{
+						email: recurring.email,
+						name: recurring.displayName,
+					},
+				],
+			});
+			return;
 		}
 
 		addImmediatePayment(newRecurring);
@@ -75,32 +115,60 @@ const addRecurring = async (req, res) => {
 // adding new payment if
 const addImmediatePayment = async (recurring) => {
 	if (!recurring?.isImmediatePayment) return;
-	let payment = await getNewPayment(recurring);
-
-	// console.log("new payment", payment);
+	let payment = getNewPayment(recurring);
 	try {
 		addNewPayments(payment);
-		console.log('sending email', recurring);
-		// sending email for the campaign manager
 
+		// getting database reference
+		const { db } = await connectToDatabase();
+		const campaign = await getCampaignDetails(db, recurring.campaign);
+		const currency = await getCurrency(db, recurring.currency);
+		const campignOwner = await getCampaignOwner(db, campaign.owner);
+		console.log('owner', campignOwner);
+		// sending email for the campaign manager
 		sendEmail({
-			title: 'Donations Recived',
+			title: 'Thank you for your donation!',
 			template: 'donationApproved',
 			options: {
 				name: recurring.displayName,
-				campginName:
-					'they woke yp at 2 am on sabos to see and smeel that their ap was filed wit smoke on fire ',
+				campginName: campaign.shortDescription,
 				title: 'Donation Recived.',
-				donationAmount: recurring.sum,
-				feeAmount: recurring.isCompleteFee ? 0 : recurring.fee,
+				donationAmount: `${currency.symbol}${recurring.sum}`,
+				feeAmount: recurring.isCompleteFee
+					? `${currency.symbol}0`
+					: `${currency.symbol}${recurring.fee}`,
 				paymentMethod: 'Creditcard',
 				currentDate: moment().format('DD-MM-YYYY'),
 				transactionID: recurring._id,
 			},
 			to: [
 				{
-					email: 'motiphone2003@gmail.com',
-					name: 'Moti elmakies',
+					email: recurring.email,
+					name: recurring.displayName,
+				},
+			],
+		});
+
+		sendEmail({
+			title: 'Donation received for your campaign',
+			template: 'donationApprovedForCampaignOwner',
+			options: {
+				ownerName: `${campignOwner.firstName} ${campignOwner.lastName}`,
+				donorsName: recurring.displayName,
+				campginName: campaign.shortDescription,
+				title: 'Donation Recived.',
+				donationAmount: `${currency.symbol}${recurring.sum}`,
+				feeAmount: recurring.isCompleteFee
+					? `${currency.symbol}0`
+					: `${currency.symbol}${recurring.fee}`,
+				paymentMethod: 'Creditcard',
+				currentDate: moment().format('DD-MM-YYYY'),
+				transactionID: `${campignOwner.firstName} ${campignOwner.lastName}`,
+			},
+			to: [
+				{
+					email: campignOwner.email,
+					name: recurring.displayName,
 				},
 			],
 		});
@@ -111,7 +179,8 @@ const addImmediatePayment = async (recurring) => {
 
 const getDonations = async (req, res) => {
 	try {
-		const donations = await getAll(req.body);
+		const data = req.body;
+		const donations = await getAll(data.filters, data.selectedFields);
 		res.send(donations);
 	} catch (e) {
 		console.log(e);

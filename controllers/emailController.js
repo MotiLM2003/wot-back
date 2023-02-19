@@ -1,7 +1,7 @@
 const { sendEmail: send } = require('../emails/email');
 
 const sendEmail = async (req, res) => {
-	const { title, template, options, to } = req.body;
+	const { title, template, options, to, content = '' } = req.body;
 	try {
 		send({
 			title: title,
@@ -9,6 +9,7 @@ const sendEmail = async (req, res) => {
 			options: {
 				name: options.firstName,
 				title: title,
+				content: content,
 			},
 			to: to,
 		});

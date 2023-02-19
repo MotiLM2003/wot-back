@@ -30,7 +30,7 @@ const getHeader = (options) => {
                              border-bottom: 1px solid #ccc;
                          "
                      >
-                         <div style="gap: 1rem; align-items: center; max-height: 2.6rem">
+                         <div style="gap: 1rem; align-items: center; max-height: 2.6rem;margin-bottom:.7rem">
                              <span>
                                  <svg
                                      width="47"

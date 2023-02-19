@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { connectToDatabase } = require('./lib/mongodb/mongodb');
 const express = require('express');
 require('./db/mongoose');
 const cookieParser = require('cookie-parser');
@@ -27,6 +28,7 @@ const app = express();
 const PORT = process.env.PORT;
 const origin = process.env.ORIGIN;
 process.on('uncaughtException', function (err) {});
+
 app.use(
 	cors({
 		credentials: true,
@@ -66,3 +68,18 @@ const addInitialLog = async () => {
 		params: [PORT],
 	});
 };
+
+// // connecting to db example
+// const connectdb = async () => {
+// 	try {
+// 		const { db } = await connectToDatabase();
+// 		console.log(db);
+// 		const data = await db
+// 			.collection('campaigns')
+// 			.findOne({}, { projection: { campaignName: 1 } });
+// 		console.log('data', data);
+// 	} catch (err) {
+// 		console.log(err);
+// 	}
+// };
+// connectdb();

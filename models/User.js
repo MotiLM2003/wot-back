@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema(
 	{
 		firstName: { type: String, default: '', trim: true },
 		lastName: { type: String, default: '', trim: true },
-		email: { type: String, trim: true },
+		email: { type: String, trim: true, unique: true },
 		phone: { type: String, trim: true },
 		// userName: { type: String, required: true, trim: true },
 		password: { type: String, required: true, trim: true },
@@ -41,14 +41,12 @@ const userSchema = new mongoose.Schema(
 userSchema.methods.toJSON = function () {
 	const user = this;
 	const userObject = user.toObject();
-
 	delete userObject.tokens;
 	delete userObject.__v;
 	delete userObject.password;
 	delete userObject.creditCardNumber;
 	delete userObject.creditCardExpire;
 	delete userObject.creditCardExpire;
-
 	return userObject;
 };
 
